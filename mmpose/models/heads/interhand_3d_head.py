@@ -501,7 +501,7 @@ class Interhand3DHead(nn.Module):
         keypoints_3d = np.zeros((batch_size, preds.shape[1], 4),
                                 dtype=np.float32)
         keypoints_3d[:, :, 0:3] = preds[:, :, 0:3]
-        keypoints_3d[:, :, 3:4] = maxvals
+        keypoints_3d[:, :, 3:4] = maxvals / 255.0
         # transform keypoint depth to camera space
         keypoints_3d[:, :, 2] = \
             (keypoints_3d[:, :, 2] / self.right_hand_head.depth_size - 0.5) \
