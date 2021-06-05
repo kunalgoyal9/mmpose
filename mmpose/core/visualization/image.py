@@ -210,7 +210,8 @@ def imshow_keypoints_3d(
                 y_3d[valid],
                 z_3d[valid],
                 marker='o',
-                color=_color[valid])
+                color=_color[valid],
+            )
 
         if skeleton is not None and pose_limb_color is not None:
             pose_limb_color = np.array(pose_limb_color)

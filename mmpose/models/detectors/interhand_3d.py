@@ -192,7 +192,7 @@ class Interhand3D(TopDown):
             pose_kpt_color,
             pose_limb_color,
             vis_height,
-            axis_limit=400,
+            axis_limit=300,
             axis_azimuth=-115,
             axis_elev=15,
             kpt_score_thr=kpt_score_thr)
