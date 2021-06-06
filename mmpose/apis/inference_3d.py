@@ -329,11 +329,11 @@ def vis_3d_pose_result(model,
 
 def inference_interhand_3d_model(model,
                                  img_or_path,
-                                 person_results,
+                                 det_results,
                                  bbox_thr=None,
                                  format='xywh',
                                  dataset='TopDownCocoDataset'):
-    """Inference human bounding boxes.
+    """Inference a single image with a list of hand bounding boxes.
 
     num_bboxes: N
     num_keypoints: K
@@ -341,7 +341,7 @@ def inference_interhand_3d_model(model,
     Args:
         model (nn.Module): The loaded pose model.
         img_or_path (str | np.ndarray): Image filename or loaded image.
-        person_results (List[List[dict]]): The 2D bbox sequences stored in a
+        det_results (List[List[dict]]): The 2D bbox sequences stored in a
             nested list. Each element of the outer list is the bbox of a single
             frame, and each element of the inner list is the bbox of one
             person, which contains:
@@ -363,18 +363,18 @@ def inference_interhand_3d_model(model,
 
     pose_results = []
 
-    if len(person_results) == 0:
+    if len(det_results) == 0:
         return pose_results
 
     # Change for-loop preprocess each bbox to preprocess all bboxes at once.
-    bboxes = np.array([box['bbox'] for box in person_results])
+    bboxes = np.array([box['bbox'] for box in det_results])
 
     # Select bboxes by score threshold
     if bbox_thr is not None:
         assert bboxes.shape[1] == 5
         valid_idx = np.where(bboxes[:, 4] > bbox_thr)[0]
         bboxes = bboxes[valid_idx]
-        person_results = [person_results[i] for i in valid_idx]
+        det_results = [det_results[i] for i in valid_idx]
 
     if format == 'xyxy':
         bboxes_xyxy = bboxes
@@ -470,12 +470,12 @@ def inference_interhand_3d_model(model,
     # add relative root depth to left hand joints
     poses_3d[:, 21:, 2] += rel_root_depth
 
-    # set joints valid according to hand type
+    # set joint scores according to hand type
     poses_3d[:, :21, 3] *= hand_type[:, [0]]
     poses_3d[:, 21:, 3] *= hand_type[:, [1]]
 
     pose_results = []
-    for pose_3d, person_res, bbox_xyxy in zip(poses_3d, person_results,
+    for pose_3d, person_res, bbox_xyxy in zip(poses_3d, det_results,
                                               bboxes_xyxy):
         pose_res = person_res.copy()
         pose_res['keypoints_3d'] = pose_3d

@@ -13,12 +13,12 @@ from mmpose.core import SimpleCamera
 
 def _transfer_interhand_camera_param(interhand_camera_param):
     """Transform the camera parameters in interhand2.6m dataset to the format
-    of SimpleDataset.
+    of SimpleCamera.
 
     Args:
         interhand_camera_param (dict): camera parameters including:
             - camrot: 3x3, camera rotation matrix (world-to-camera)
-            - campos: 3x1, camera location in world coordinates
+            - campos: 3x1, camera location in world space
             - focal: 2x1, camera focal length
             - princpt: 2x1, camera center
 
@@ -42,7 +42,7 @@ def _transfer_interhand_camera_param(interhand_camera_param):
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument('pose_config', help='Config file for detection')
+    parser.add_argument('pose_config', help='Config file for pose network')
     parser.add_argument('pose_checkpoint', help='Checkpoint file')
     parser.add_argument('--img-root', type=str, default='', help='Image root')
     parser.add_argument(
@@ -55,9 +55,14 @@ def main():
         type=str,
         default=None,
         help='Camera parameter file for converting 3D pose predictions from '
-        ' the camera space to to world space. If None, no conversion will be '
-        'applied.')
-    parser.add_argument('--gt-joints-file', type=str, default=None)
+        ' the pixel space to camera space. If None, keypoints in pixel space'
+        'will be visualized')
+    parser.add_argument(
+        '--gt-joints-file',
+        type=str,
+        default=None,
+        help='Ground truth 3D keypoint parameter file. It is also necessary '
+        'for transformation from pixel space to camera space.')
     parser.add_argument(
         '--rebase-keypoint-height',
         action='store_true',
@@ -68,9 +73,7 @@ def main():
     parser.add_argument(
         '--show-ground-truth',
         action='store_true',
-        help='If True, show ground truth if it is available. The ground truth '
-        'should be contained in the annotations in the Json file with the key '
-        '"keypoints_3d" for each instance.')
+        help='If True, show ground truth keypoint if it is available.')
     parser.add_argument(
         '--show',
         action='store_true',
@@ -84,7 +87,8 @@ def main():
         'Default not saving the visualization images.')
     parser.add_argument(
         '--device', default='cuda:0', help='Device for inference')
-    parser.add_argument('--kpt-thr', type=float, default=0.3)
+    parser.add_argument(
+        '--kpt-thr', type=float, default=0.3, help='Keypoint score threshold')
 
     args = parser.parse_args()
     assert args.show or (args.out_img_root != '')
@@ -154,25 +158,28 @@ def main():
         pose_results = inference_interhand_3d_model(
             pose_model, image_name, person_results, dataset=dataset)
 
-        # Pose processing
+        # Post processing
         pose_results_vis = []
         for idx, res in enumerate(pose_results):
             keypoints_3d = res['keypoints_3d']
-            # get 2D keypoints
+            # normalize kpt score
+            if keypoints_3d[:, 3].max() > 1:
+                keypoints_3d[:, 3] /= 255
+            # get 2D keypoints in pixel space
             res['keypoints'] = keypoints_3d[:, [0, 1, 3]]
 
-            # For model-predicted keypoints, channel 0 and 1 are pixel
-            # coordinates in image space, and channel 2 is the depth (in mm)
-            # relative to root joints.
-            # If both camera parameter and root joints absolute depth are
-            # provided, we can transform keypoint to camera coordinate
-            # for better visualization.
+            # For model-predicted keypoints, channel 0 and 1 are coordinates
+            # in pixel space, and channel 2 is the depth (in mm) relative
+            # to root joints.
+            # If both camera parameter and absolute depth of root joints are
+            # provided, we can transform keypoint to camera space for better
+            # visualization.
             camera_para = res['camera_para']
             keypoints_3d_gt = res['keypoints_3d_gt']
             if camera_para is not None and keypoints_3d_gt is not None:
                 # build camera model
                 camera = SimpleCamera(camera_para)
-                # transform gt joints from world to camera coordinates
+                # transform gt joints from world space to camera space
                 keypoints_3d_gt[:, :3] = camera.world_to_camera(
                     keypoints_3d_gt[:, :3])
 
@@ -180,11 +187,11 @@ def main():
                 keypoints_3d[:21, 2] += keypoints_3d_gt[20, 2]
                 keypoints_3d[21:, 2] += keypoints_3d_gt[41, 2]
 
-                # transform keypoints from pixel to camera coordinate
+                # transform keypoints from pixel space to camera space
                 keypoints_3d[:, :3] = camera.pixel_to_camera(
                     keypoints_3d[:, :3])
 
-            # rotate the keypoint to make z-channel correspondent to height
+            # rotate the keypoint to make z-axis correspondent to height
             # for better visualization
             vis_R = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
             keypoints_3d[:, :3] = keypoints_3d[:, :3] @ vis_R
@@ -207,8 +214,7 @@ def main():
             if args.show_ground_truth:
                 if keypoints_3d_gt is None:
                     print('Fail to show ground truth. Please make sure that'
-                          ' the instance annotations from the Json file'
-                          ' contain "keypoints_3d".')
+                          ' gt-joints-file is provided.')
                 else:
                     gt = res.copy()
                     if args.rebase_keypoint_height:

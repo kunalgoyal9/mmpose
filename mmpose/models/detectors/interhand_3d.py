@@ -124,6 +124,8 @@ class Interhand3D(TopDown):
             img (str or Tensor): Optional. The image to visualize 2D inputs on.
             skeleton (list of [idx_i,idx_j]): Skeleton described by a list of
                 limbs, each is a pair of joint indices.
+            kpt_score_thr (float, optional): Minimum score of keypoints
+                to be shown. Default: 0.3.
             pose_kpt_color (np.array[Nx3]`): Color of N keypoints.
                 If None, do not draw keypoints.
             pose_limb_color (np.array[Mx3]): Color of M limbs.
@@ -132,6 +134,7 @@ class Interhand3D(TopDown):
                 will be N*vis_height depending on the number of visualized
                 items.
             win_name (str): The window name.
+            show (bool): Whether to show the image. Default: False.
             wait_time (int): Value of waitKey param.
                 Default: 0.
             out_file (str or None): The filename to write the image.
@@ -144,12 +147,12 @@ class Interhand3D(TopDown):
         assert len(result) > 0
         result = sorted(result, key=lambda x: x.get('track_id', 0))
 
-        # draw image and input 2d poses
+        # draw image and 2d poses
         if img is not None:
             img = mmcv.imread(img)
 
             bbox_result = []
-            pose_input_2d = []
+            pose_2d = []
             for res in result:
                 if 'bbox' in res:
                     bbox = np.array(res['bbox'])
@@ -162,7 +165,7 @@ class Interhand3D(TopDown):
                     if kpts.ndim != 2:
                         assert kpts.ndim == 3
                         kpts = kpts[-1]  # Get 2D keypoints from the last frame
-                    pose_input_2d.append(kpts)
+                    pose_2d.append(kpts)
 
             if len(bbox_result) > 0:
                 bboxes = np.vstack(bbox_result)
@@ -173,10 +176,10 @@ class Interhand3D(TopDown):
                     top_k=-1,
                     thickness=2,
                     show=False)
-            if len(pose_input_2d) > 0:
+            if len(pose_2d) > 0:
                 imshow_keypoints(
                     img,
-                    pose_input_2d,
+                    pose_2d,
                     skeleton,
                     kpt_score_thr=0.3,
                     pose_kpt_color=pose_kpt_color,
