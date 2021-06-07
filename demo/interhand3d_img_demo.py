@@ -11,7 +11,7 @@ from mmpose.apis.inference import init_pose_model
 from mmpose.core import SimpleCamera
 
 
-def _transfer_interhand_camera_param(interhand_camera_param):
+def _transform_interhand_camera_param(interhand_camera_param):
     """Transform the camera parameters in interhand2.6m dataset to the format
     of SimpleCamera.
 
@@ -31,12 +31,9 @@ def _transfer_interhand_camera_param(interhand_camera_param):
     """
     camera_param = {}
     camera_param['R'] = np.array(interhand_camera_param['camrot']).T
-    camera_param['T'] = np.array(interhand_camera_param['campos'])[:,
-                                                                   np.newaxis]
-    camera_param['f'] = np.array(interhand_camera_param['focal'])[:,
-                                                                  np.newaxis]
-    camera_param['c'] = np.array(interhand_camera_param['princpt'])[:,
-                                                                    np.newaxis]
+    camera_param['T'] = np.array(interhand_camera_param['campos'])[:, None]
+    camera_param['f'] = np.array(interhand_camera_param['focal'])[:, None]
+    camera_param['c'] = np.array(interhand_camera_param['princpt'])[:, None]
     return camera_param
 
 
@@ -109,13 +106,13 @@ def main():
     if args.gt_joints_file is not None:
         gt_joint_params = mmcv.load(args.gt_joints_file)
 
-    # load person bounding boxes
-    person_results_list = []
+    # load hand bounding boxes
+    det_results_list = []
     for image_id, image in coco.imgs.items():
         image_name = osp.join(args.img_root, image['file_name'])
 
         ann_ids = coco.getAnnIds(image_id)
-        person_results = []
+        det_results = []
 
         capture_key = str(image['capture'])
         camera_key = image['camera']
@@ -128,14 +125,14 @@ def main():
                     key: camera_params[capture_key][key][camera_key]
                     for key in camera_params[capture_key].keys()
                 }
-                camera_param = _transfer_interhand_camera_param(camera_param)
+                camera_param = _transform_interhand_camera_param(camera_param)
             else:
                 camera_param = None
             if gt_joint_params is not None:
-                joint_para = gt_joint_params[capture_key][str(frame_idx)]
+                joint_param = gt_joint_params[capture_key][str(frame_idx)]
                 gt_joint = np.concatenate([
-                    np.array(joint_para['world_coord']),
-                    np.array(joint_para['joint_valid'])
+                    np.array(joint_param['world_coord']),
+                    np.array(joint_param['joint_valid'])
                 ],
                                           axis=-1)
             else:
@@ -144,19 +141,19 @@ def main():
             det_result = {
                 'image_name': image_name,
                 'bbox': ann['bbox'],  # bbox format is 'xywh'
-                'camera_para': camera_param,
+                'camera_param': camera_param,
                 'keypoints_3d_gt': gt_joint
             }
-            person_results.append(det_result)
-        person_results_list.append(person_results)
+            det_results.append(det_result)
+        det_results_list.append(det_results)
 
-    for i, person_results in enumerate(
-            mmcv.track_iter_progress(person_results_list)):
+    for i, det_results in enumerate(
+            mmcv.track_iter_progress(det_results_list)):
 
-        image_name = person_results[0]['image_name']
+        image_name = det_results[0]['image_name']
 
         pose_results = inference_interhand_3d_model(
-            pose_model, image_name, person_results, dataset=dataset)
+            pose_model, image_name, det_results, dataset=dataset)
 
         # Post processing
         pose_results_vis = []
@@ -174,11 +171,11 @@ def main():
             # If both camera parameter and absolute depth of root joints are
             # provided, we can transform keypoint to camera space for better
             # visualization.
-            camera_para = res['camera_para']
+            camera_param = res['camera_param']
             keypoints_3d_gt = res['keypoints_3d_gt']
-            if camera_para is not None and keypoints_3d_gt is not None:
+            if camera_param is not None and keypoints_3d_gt is not None:
                 # build camera model
-                camera = SimpleCamera(camera_para)
+                camera = SimpleCamera(camera_param)
                 # transform gt joints from world space to camera space
                 keypoints_3d_gt[:, :3] = camera.world_to_camera(
                     keypoints_3d_gt[:, :3])
@@ -235,7 +232,7 @@ def main():
         vis_3d_pose_result(
             pose_model,
             result=pose_results_vis,
-            img=person_results[0]['image_name'],
+            img=det_results[0]['image_name'],
             out_file=out_file,
             dataset=dataset,
             show=args.show,
