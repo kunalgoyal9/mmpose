@@ -1,8 +1,8 @@
-from ..builder import POSENETS
 import mmcv
 import numpy as np
 
 from mmpose.core import imshow_keypoints, imshow_keypoints_3d
+from ..builder import POSENETS
 from .top_down import TopDown
 
 
