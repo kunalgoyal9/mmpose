@@ -282,10 +282,9 @@ def inference_interhand_3d_model(model,
     Args:
         model (nn.Module): The loaded pose model.
         img_or_path (str | np.ndarray): Image filename or loaded image.
-        det_results (List[List[dict]]): The 2D bbox sequences stored in a
-            nested list. Each element of the outer list is the bbox of a single
-            frame, and each element of the inner list is the bbox of one
-            person, which contains:
+        det_results (List[dict]): The 2D bbox sequences stored in a list.
+            Each each element of the list is the bbox of one person, which
+            contains:
                 - "bbox" (ndarray[4 or 5]): The person bounding box,
                 which contains 4 box coordinates (and score).
         dataset (str): Dataset name.
