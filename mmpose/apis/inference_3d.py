@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import torch
 from mmcv.parallel import collate, scatter
@@ -71,6 +73,7 @@ def _collate_pose_sequence(pose_results, with_track_id=True):
 def inference_pose_lifter_model(model,
                                 pose_results_2d,
                                 dataset,
+                                dataset_info=None,
                                 with_track_id=True):
     """Inference 3D pose from 2D pose sequences using a pose lifter model.
 
@@ -100,11 +103,19 @@ def inference_pose_lifter_model(model,
     cfg = model.cfg
     test_pipeline = Compose(cfg.test_pipeline)
 
-    flip_pairs = None
-    if dataset == 'Body3DH36MDataset':
-        flip_pairs = [[1, 4], [2, 5], [3, 6], [11, 14], [12, 15], [13, 16]]
+    if dataset_info is not None:
+        flip_pairs = dataset_info.flip_pairs
     else:
-        raise NotImplementedError()
+        warnings.warn(
+            'dataset is deprecated.'
+            'Please set `dataset_info` in the config.'
+            'Check https://github.com/open-mmlab/mmpose/pull/663 for details.',
+            DeprecationWarning)
+        # TODO: These will be removed in the later versions.
+        if dataset == 'Body3DH36MDataset':
+            flip_pairs = [[1, 4], [2, 5], [3, 6], [11, 14], [12, 15], [13, 16]]
+        else:
+            raise NotImplementedError()
 
     pose_sequences_2d = _collate_pose_sequence(pose_results_2d, with_track_id)
 
@@ -184,6 +195,7 @@ def vis_3d_pose_result(model,
                        img=None,
                        dataset='Body3DH36MDataset',
                        kpt_score_thr=0.3,
+                       dataset_info=None,
                        show=False,
                        out_file=None):
     """Visualize the 3D pose estimation results.
@@ -192,30 +204,42 @@ def vis_3d_pose_result(model,
         model (nn.Module): The loaded model.
         result (list[dict])
     """
+
+    if dataset_info is not None:
+        skeleton = dataset_info.skeleton
+        pose_kpt_color = dataset_info.pose_kpt_color
+        pose_link_color = dataset_info.pose_link_color
+    else:
+        warnings.warn(
+            'dataset is deprecated.'
+            'Please set `dataset_info` in the config.'
+            'Check https://github.com/open-mmlab/mmpose/pull/663 for details.',
+            DeprecationWarning)
+        # TODO: These will be removed in the later versions.
+        palette = np.array([[255, 128, 0], [255, 153, 51], [255, 178, 102],
+                            [230, 230, 0], [255, 153, 255], [153, 204, 255],
+                            [255, 102, 255], [255, 51, 255], [102, 178, 255],
+                            [51, 153, 255], [255, 153, 153], [255, 102, 102],
+                            [255, 51, 51], [153, 255, 153], [102, 255, 102],
+                            [51, 255, 51], [0, 255, 0], [0, 0, 255],
+                            [255, 0, 0], [255, 255, 255]])
+
+        if dataset == 'Body3DH36MDataset':
+            skeleton = [[0, 1], [1, 2], [2, 3], [0, 4], [4, 5], [5, 6], [0, 7],
+                        [7, 8], [8, 9], [9, 10], [8, 11], [11, 12], [12, 13],
+                        [8, 14], [14, 15], [15, 16]]
+
+            pose_kpt_color = palette[[
+                9, 0, 0, 0, 16, 16, 16, 9, 9, 9, 9, 16, 16, 16, 0, 0, 0
+            ]]
+            pose_link_color = palette[[
+                0, 0, 0, 16, 16, 16, 9, 9, 9, 9, 16, 16, 16, 0, 0, 0
+            ]]
+        else:
+            raise NotImplementedError
+
     if hasattr(model, 'module'):
         model = model.module
-
-    palette = np.array([[255, 128, 0], [255, 153, 51], [255, 178, 102],
-                        [230, 230, 0], [255, 153, 255], [153, 204, 255],
-                        [255, 102, 255], [255, 51, 255], [102, 178, 255],
-                        [51, 153, 255], [255, 153, 153], [255, 102, 102],
-                        [255, 51, 51], [153, 255, 153], [102, 255, 102],
-                        [51, 255, 51], [0, 255, 0], [0, 0, 255], [255, 0, 0],
-                        [255, 255, 255]])
-
-    if dataset == 'Body3DH36MDataset':
-        skeleton = [[0, 1], [1, 2], [2, 3], [0, 4], [4, 5], [5, 6], [0, 7],
-                    [7, 8], [8, 9], [9, 10], [8, 11], [11, 12], [12, 13],
-                    [8, 14], [14, 15], [15, 16]]
-
-        pose_kpt_color = palette[[
-            9, 0, 0, 0, 16, 16, 16, 9, 9, 9, 9, 16, 16, 16, 0, 0, 0
-        ]]
-        pose_link_color = palette[[
-            0, 0, 0, 16, 16, 16, 9, 9, 9, 9, 16, 16, 16, 0, 0, 0
-        ]]
-    else:
-        raise NotImplementedError
 
     img = model.show_result(
         result,
