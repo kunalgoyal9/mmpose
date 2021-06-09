@@ -1,3 +1,4 @@
+_base_ = base = ['../../../../_base_/datasets/rhd2d.py']
 log_level = 'INFO'
 load_from = None
 resume_from = None
@@ -77,7 +78,7 @@ model = dict(
                 multiscale_output=True),
             upsample=dict(mode='bilinear', align_corners=False))),
     keypoint_head=dict(
-        type='TopDownSimpleHead',
+        type='TopdownHeatmapSimpleHead',
         in_channels=[18, 36, 72, 144],
         in_index=(0, 1, 2, 3),
         input_transform='resize_concat',
@@ -153,17 +154,20 @@ data = dict(
         ann_file=f'{data_root}/annotations/rhd_train.json',
         img_prefix=f'{data_root}/',
         data_cfg=data_cfg,
-        pipeline=train_pipeline),
+        pipeline=train_pipeline,
+        dataset_info={{base.dataset_info}}),
     val=dict(
         type='Rhd2DDataset',
         ann_file=f'{data_root}/annotations/rhd_test.json',
         img_prefix=f'{data_root}/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
     test=dict(
         type='Rhd2DDataset',
         ann_file=f'{data_root}/annotations/rhd_test.json',
         img_prefix=f'{data_root}/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
 )

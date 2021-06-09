@@ -1,3 +1,4 @@
+_base_ = base = ['../../../../_base_/datasets/interhand2d.py']
 log_level = 'INFO'
 load_from = None
 resume_from = None
@@ -117,7 +118,8 @@ data = dict(
         'InterHand2.6M_train_joint_3d.json',
         img_prefix=f'{data_root}/images/train/',
         data_cfg=data_cfg,
-        pipeline=train_pipeline),
+        pipeline=train_pipeline,
+        dataset_info={{base.dataset_info}}),
     val=dict(
         type='InterHand2DDataset',
         ann_file=f'{data_root}/annotations/machine_annot/'
@@ -128,7 +130,8 @@ data = dict(
         'InterHand2.6M_val_joint_3d.json',
         img_prefix=f'{data_root}/images/val/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
     test=dict(
         type='InterHand2DDataset',
         ann_file=f'{data_root}/annotations/machine_annot/'
@@ -139,5 +142,6 @@ data = dict(
         'InterHand2.6M_test_joint_3d.json',
         img_prefix=f'{data_root}/images/test/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
 )

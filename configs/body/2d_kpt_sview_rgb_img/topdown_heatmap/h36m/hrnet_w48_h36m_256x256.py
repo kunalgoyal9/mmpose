@@ -1,3 +1,4 @@
+_base_ = base = ['../../../../_base_/datasets/h36m.py']
 log_level = 'INFO'
 load_from = None
 resume_from = None
@@ -71,7 +72,7 @@ model = dict(
                 num_channels=(48, 96, 192, 384))),
     ),
     keypoint_head=dict(
-        type='TopDownSimpleHead',
+        type='TopdownHeatmapSimpleHead',
         in_channels=48,
         out_channels=channel_cfg['num_output_channels'],
         num_deconv_layers=0,
@@ -145,17 +146,20 @@ data = dict(
         ann_file=f'{data_root}/annotation_body2d/h36m_coco_train.json',
         img_prefix=f'{data_root}/images/',
         data_cfg=data_cfg,
-        pipeline=train_pipeline),
+        pipeline=train_pipeline,
+        dataset_info={{base.dataset_info}}),
     val=dict(
         type='TopDownH36MDataset',
         ann_file=f'{data_root}/annotation_body2d/h36m_coco_test.json',
         img_prefix=f'{data_root}/images/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
     test=dict(
         type='TopDownH36MDataset',
         ann_file=f'{data_root}/annotation_body2d/h36m_coco_test.json',
         img_prefix=f'{data_root}/images/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
 )

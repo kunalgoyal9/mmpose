@@ -1,3 +1,4 @@
+_base_ = base = ['../../../../_base_/datasets/coco.py']
 log_level = 'INFO'
 load_from = None
 resume_from = None
@@ -45,7 +46,7 @@ model = dict(
         num_stacks=1,
     ),
     keypoint_head=dict(
-        type='TopDownMultiStageHead',
+        type='TopdownHeatmapMultiStageHead',
         in_channels=256,
         out_channels=channel_cfg['num_output_channels'],
         num_stages=1,
@@ -129,17 +130,20 @@ data = dict(
         ann_file=f'{data_root}/annotations/person_keypoints_train2017.json',
         img_prefix=f'{data_root}/train2017/',
         data_cfg=data_cfg,
-        pipeline=train_pipeline),
+        pipeline=train_pipeline,
+        dataset_info={{base.dataset_info}}),
     val=dict(
         type='TopDownCocoDataset',
         ann_file=f'{data_root}/annotations/person_keypoints_val2017.json',
         img_prefix=f'{data_root}/val2017/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
     test=dict(
         type='TopDownCocoDataset',
         ann_file=f'{data_root}/annotations/person_keypoints_val2017.json',
         img_prefix=f'{data_root}/val2017/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
 )

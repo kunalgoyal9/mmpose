@@ -1,3 +1,4 @@
+_base_ = base = ['../../../../_base_/datasets/coco_wholebody.py']
 log_level = 'INFO'
 load_from = None
 resume_from = None
@@ -69,7 +70,7 @@ model = dict(
                 num_channels=(48, 96, 192, 384))),
     ),
     keypoint_head=dict(
-        type='TopDownSimpleHead',
+        type='TopdownHeatmapSimpleHead',
         in_channels=48,
         out_channels=channel_cfg['num_output_channels'],
         num_deconv_layers=0,
@@ -152,17 +153,20 @@ data = dict(
         ann_file=f'{data_root}/annotations/coco_wholebody_train_v1.0.json',
         img_prefix=f'{data_root}/train2017/',
         data_cfg=data_cfg,
-        pipeline=train_pipeline),
+        pipeline=train_pipeline,
+        dataset_info={{base.dataset_info}}),
     val=dict(
         type='TopDownCocoWholeBodyDataset',
         ann_file=f'{data_root}/annotations/coco_wholebody_val_v1.0.json',
         img_prefix=f'{data_root}/val2017/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
     test=dict(
         type='TopDownCocoWholeBodyDataset',
         ann_file=f'{data_root}/annotations/coco_wholebody_val_v1.0.json',
         img_prefix=f'{data_root}/val2017/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
 )

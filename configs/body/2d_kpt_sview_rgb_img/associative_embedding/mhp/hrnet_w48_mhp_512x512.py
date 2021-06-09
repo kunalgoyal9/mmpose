@@ -1,3 +1,4 @@
+_base_ = base = ['../../../../_base_/datasets/mhp.py']
 log_level = 'INFO'
 load_from = None
 resume_from = None
@@ -47,7 +48,7 @@ data_cfg = dict(
 
 # model settings
 model = dict(
-    type='BottomUp',
+    type='AssociativeEmbedding',
     pretrained='https://download.openmmlab.com/mmpose/'
     'pretrain_models/hrnet_w48-8ef0771d.pth',
     backbone=dict(
@@ -80,7 +81,7 @@ model = dict(
                 num_channels=(48, 96, 192, 384))),
     ),
     keypoint_head=dict(
-        type='BottomUpSimpleHead',
+        type='AESimpleHead',
         in_channels=48,
         num_joints=16,
         num_deconv_layers=0,
@@ -175,17 +176,20 @@ data = dict(
         ann_file=f'{data_root}/annotations/mhp_train.json',
         img_prefix=f'{data_root}/train/images/',
         data_cfg=data_cfg,
-        pipeline=train_pipeline),
+        pipeline=train_pipeline,
+        dataset_info={{base.dataset_info}}),
     val=dict(
         type='BottomUpMhpDataset',
         ann_file=f'{data_root}/annotations/mhp_val.json',
         img_prefix=f'{data_root}/val/images/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
     test=dict(
         type='BottomUpMhpDataset',
         ann_file=f'{data_root}/annotations/mhp_val.json',
         img_prefix=f'{data_root}/val/images/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
 )

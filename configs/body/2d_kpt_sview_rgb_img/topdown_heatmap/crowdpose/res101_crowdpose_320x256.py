@@ -1,3 +1,4 @@
+_base_ = base = ['../../../../_base_/datasets/crowdpose.py']
 log_level = 'INFO'
 load_from = None
 resume_from = None
@@ -40,7 +41,7 @@ model = dict(
     pretrained='torchvision://resnet101',
     backbone=dict(type='ResNet', depth=101),
     keypoint_head=dict(
-        type='TopDownSimpleHead',
+        type='TopdownHeatmapSimpleHead',
         in_channels=2048,
         out_channels=channel_cfg['num_output_channels'],
         loss_keypoint=dict(type='JointsMSELoss', use_target_weight=True)),
@@ -122,13 +123,15 @@ data = dict(
         ann_file=f'{data_root}/annotations/mmpose_crowdpose_trainval.json',
         img_prefix=f'{data_root}/images/',
         data_cfg=data_cfg,
-        pipeline=train_pipeline),
+        pipeline=train_pipeline,
+        dataset_info={{base.dataset_info}}),
     val=dict(
         type='TopDownCrowdPoseDataset',
         ann_file=f'{data_root}/annotations/mmpose_crowdpose_test.json',
         img_prefix=f'{data_root}/images/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
     test=dict(
         type='TopDownCrowdPoseDataset',
         ann_file=f'{data_root}/annotations/mmpose_crowdpose_test.json',

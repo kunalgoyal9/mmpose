@@ -1,3 +1,4 @@
+_base_ = base = ['../../../../_base_/datasets/jhmdb.py']
 log_level = 'INFO'
 load_from = 'https://download.openmmlab.com/mmpose/top_down/cpm/cpm_mpii_368x368-116e62b8_20200822.pth'  # noqa: E501
 resume_from = None
@@ -45,7 +46,7 @@ model = dict(
         feat_channels=128,
         num_stages=6),
     keypoint_head=dict(
-        type='TopDownMultiStageHead',
+        type='TopdownHeatmapMultiStageHead',
         in_channels=channel_cfg['num_output_channels'],
         out_channels=channel_cfg['num_output_channels'],
         num_stages=6,
@@ -126,17 +127,20 @@ data = dict(
         ann_file=f'{data_root}/annotations/Sub2_train.json',
         img_prefix=f'{data_root}/',
         data_cfg=data_cfg,
-        pipeline=train_pipeline),
+        pipeline=train_pipeline,
+        dataset_info={{base.dataset_info}}),
     val=dict(
         type='TopDownJhmdbDataset',
         ann_file=f'{data_root}/annotations/Sub2_test.json',
         img_prefix=f'{data_root}/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
     test=dict(
         type='TopDownJhmdbDataset',
         ann_file=f'{data_root}/annotations/Sub2_test.json',
         img_prefix=f'{data_root}/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
 )

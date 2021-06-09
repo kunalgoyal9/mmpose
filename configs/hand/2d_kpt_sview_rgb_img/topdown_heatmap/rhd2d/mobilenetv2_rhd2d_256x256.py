@@ -1,3 +1,4 @@
+_base_ = base = ['../../../../_base_/datasets/rhd2d.py']
 log_level = 'INFO'
 load_from = None
 resume_from = None
@@ -47,7 +48,7 @@ model = dict(
     pretrained='mmcls://mobilenet_v2',
     backbone=dict(type='MobileNetV2', widen_factor=1., out_indices=(7, )),
     keypoint_head=dict(
-        type='TopDownSimpleHead',
+        type='TopdownHeatmapSimpleHead',
         in_channels=1280,
         out_channels=channel_cfg['num_output_channels'],
         loss_keypoint=dict(type='JointsMSELoss', use_target_weight=True)),
@@ -112,17 +113,20 @@ data = dict(
         ann_file=f'{data_root}/annotations/rhd_train.json',
         img_prefix=f'{data_root}/',
         data_cfg=data_cfg,
-        pipeline=train_pipeline),
+        pipeline=train_pipeline,
+        dataset_info={{base.dataset_info}}),
     val=dict(
         type='Rhd2DDataset',
         ann_file=f'{data_root}/annotations/rhd_test.json',
         img_prefix=f'{data_root}/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
     test=dict(
         type='Rhd2DDataset',
         ann_file=f'{data_root}/annotations/rhd_test.json',
         img_prefix=f'{data_root}/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
 )

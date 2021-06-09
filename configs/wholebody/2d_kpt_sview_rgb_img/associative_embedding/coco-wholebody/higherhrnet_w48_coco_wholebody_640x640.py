@@ -1,3 +1,4 @@
+_base_ = base = ['../../../../_base_/datasets/coco_wholebody.py']
 log_level = 'INFO'
 load_from = None
 resume_from = None
@@ -48,7 +49,7 @@ data_cfg = dict(
 
 # model settings
 model = dict(
-    type='BottomUp',
+    type='AssociativeEmbedding',
     pretrained='https://download.openmmlab.com/mmpose/'
     'pretrain_models/hrnet_w48-8ef0771d.pth',
     backbone=dict(
@@ -81,7 +82,7 @@ model = dict(
                 num_channels=(48, 96, 192, 384))),
     ),
     keypoint_head=dict(
-        type='BottomUpHigherResolutionHead',
+        type='AEHigherResolutionHead',
         in_channels=48,
         num_joints=133,
         tag_per_joint=True,
@@ -181,17 +182,20 @@ data = dict(
         ann_file=f'{data_root}/annotations/coco_wholebody_train_v1.0.json',
         img_prefix=f'{data_root}/train2017/',
         data_cfg=data_cfg,
-        pipeline=train_pipeline),
+        pipeline=train_pipeline,
+        dataset_info={{base.dataset_info}}),
     val=dict(
         type='BottomUpCocoWholeBodyDataset',
         ann_file=f'{data_root}/annotations/coco_wholebody_val_v1.0.json',
         img_prefix=f'{data_root}/val2017/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
     test=dict(
         type='BottomUpCocoWholeBodyDataset',
         ann_file=f'{data_root}/annotations/coco_wholebody_val_v1.0.json',
         img_prefix=f'{data_root}/val2017/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
 )

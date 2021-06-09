@@ -1,3 +1,4 @@
+_base_ = base = ['../../../../_base_/datasets/crowdpose.py']
 log_level = 'INFO'
 load_from = None
 resume_from = None
@@ -48,11 +49,11 @@ data_cfg = dict(
 
 # model settings
 model = dict(
-    type='BottomUp',
+    type='AssociativeEmbedding',
     pretrained='torchvision://resnet152',
     backbone=dict(type='ResNet', depth=152),
     keypoint_head=dict(
-        type='BottomUpSimpleHead',
+        type='AESimpleHead',
         in_channels=2048,
         num_joints=14,
         tag_per_joint=True,
@@ -145,17 +146,20 @@ data = dict(
         ann_file=f'{data_root}/annotations/mmpose_crowdpose_trainval.json',
         img_prefix=f'{data_root}/images/',
         data_cfg=data_cfg,
-        pipeline=train_pipeline),
+        pipeline=train_pipeline,
+        dataset_info={{base.dataset_info}}),
     val=dict(
         type='BottomUpCrowdPoseDataset',
         ann_file=f'{data_root}/annotations/mmpose_crowdpose_test.json',
         img_prefix=f'{data_root}/images/',
         data_cfg=data_cfg,
-        pipeline=val_pipeline),
+        pipeline=val_pipeline,
+        dataset_info={{base.dataset_info}}),
     test=dict(
         type='BottomUpCrowdPoseDataset',
         ann_file=f'{data_root}/annotations/mmpose_crowdpose_test.json',
         img_prefix=f'{data_root}/images/',
         data_cfg=data_cfg,
-        pipeline=test_pipeline),
+        pipeline=test_pipeline,
+        dataset_info={{base.dataset_info}}),
 )
