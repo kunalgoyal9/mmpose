@@ -45,6 +45,8 @@ def fliplr_joints(joints_3d, joints_3d_visible, img_width, flip_pairs):
 
     # Flip horizontally
     joints_3d_flipped[:, 0] = img_width - 1 - joints_3d_flipped[:, 0]
+    
+    # Zeroing non-visible keypoints
     joints_3d_flipped = joints_3d_flipped * joints_3d_visible_flipped
 
     return joints_3d_flipped, joints_3d_visible_flipped
