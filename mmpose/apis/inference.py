@@ -222,9 +222,10 @@ def _inference_single_pose_model(model,
                       [61, 63], [60, 64], [67, 65], [58, 56], [59, 55]]
 
     elif dataset in 'FaceAFLWDataset':
-        flip_pairs = [[0, 5], [1, 4], [2, 3], [6, 11], [7, 10], [8, 9],
-                      [12, 14], [15, 17]]
+        # flip_pairs = [[0, 5], [1, 4], [2, 3], [6, 11], [7, 10], [8, 9],
+        #               [12, 14], [15, 17]]
 
+        flip_pairs = [[0, 1], [3, 4], [7, 8], [9, 10]]
     elif dataset in 'FaceCOFWDataset':
         flip_pairs = [[0, 1], [4, 6], [2, 3], [5, 7], [8, 9], [10, 11],
                       [12, 14], [16, 17], [13, 15], [18, 19], [22, 23]]
@@ -663,7 +664,7 @@ def vis_pose_result(model,
         skeleton = []
 
         pose_limb_color = palette[[]]
-        pose_kpt_color = palette[[19] * 19]
+        pose_kpt_color = palette[[11] * 11]
         radius = 3
         kpt_score_thr = 0
 
@@ -736,7 +737,7 @@ def vis_pose_result(model,
 
     img = model.show_result(
         img,
-        result,
+        result[0],
         skeleton,
         radius=radius,
         pose_kpt_color=pose_kpt_color,

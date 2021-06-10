@@ -46,12 +46,11 @@ class FaceAFLWDataset(FaceBaseDataset):
             ann_file, img_prefix, data_cfg, pipeline, test_mode=test_mode)
 
         self.ann_info['use_different_joint_weights'] = False
-        assert self.ann_info['num_joints'] == 19
+#         assert self.ann_info['num_joints'] == 19
         self.ann_info['joint_weights'] = \
             np.ones((self.ann_info['num_joints'], 1), dtype=np.float32)
 
-        self.ann_info['flip_pairs'] = [[0, 5], [1, 4], [2, 3], [6, 11],
-                                       [7, 10], [8, 9], [12, 14], [15, 17]]
+        self.ann_info['flip_pairs'] = [[0, 1], [3, 4], [7, 8], [9, 10]]
 
         self.dataset_name = 'aflw'
         self.db = self._get_db()
@@ -70,9 +69,9 @@ class FaceAFLWDataset(FaceBaseDataset):
             objs = self.coco.loadAnns(ann_ids)
 
             for obj in objs:
-                if self.test_mode:
-                    # 'box_size' is used as normalization factor
-                    assert 'box_size' in obj
+                # if self.test_mode:
+                #     # 'box_size' is used as normalization factor
+                #     assert 'box_size' in obj
                 if max(obj['keypoints']) == 0:
                     continue
                 joints_3d = np.zeros((num_joints, 3), dtype=np.float32)
@@ -86,7 +85,8 @@ class FaceAFLWDataset(FaceBaseDataset):
                     center = np.array(obj['center'])
                     scale = np.array([obj['scale'], obj['scale']]) * 1.25
                 else:
-                    center, scale = self._xywh2cs(*obj['bbox'][:4], 1.25)
+                    w, h = self.coco.imgs[img_id]['width'], self.coco.imgs[img_id]['height']
+                    center, scale = self._xywh2cs(0, 0, w, h, 1.25)
 
                 image_file = os.path.join(self.img_prefix,
                                           self.id2name[img_id])
@@ -99,17 +99,17 @@ class FaceAFLWDataset(FaceBaseDataset):
                     'joints_3d': joints_3d,
                     'joints_3d_visible': joints_3d_visible,
                     'dataset': self.dataset_name,
-                    'bbox': obj['bbox'],
-                    'box_size': obj['box_size'],
-                    'bbox_score': 1,
-                    'bbox_id': bbox_id
+#                     'bbox': obj['bbox'],
+#                     'box_size': obj['box_size'],
+#                     'bbox_score': 1,
+#                     'bbox_id': bbox_id
                 })
                 bbox_id = bbox_id + 1
-        gt_db = sorted(gt_db, key=lambda x: x['bbox_id'])
+#         gt_db = gt_db, key=lambda x: x['bbox_id']
 
         return gt_db
 
-    def _get_normalize_factor(self, box_sizes):
+    def _get_normalize_factor(self, gts, box_sizes=None):
         """Get normalize factor for evaluation.
 
         Args:
@@ -118,8 +118,13 @@ class FaceAFLWDataset(FaceBaseDataset):
         Return:
             np.ndarray[N, 2]: normalized factor
         """
+        # Distance between left eye and right eye
+        interocular = np.linalg.norm(
+            gts[:, 0, :] - gts[:, 1, :], axis=1, keepdims=True)
+        return np.tile(interocular, [1, 2])
 
-        return np.tile(box_sizes, [1, 2])
+
+        # return np.tile(box_sizes, [1, 2])
 
     def _report_metric(self, res_file, metrics):
         """Keypoint evaluation.
@@ -147,15 +152,15 @@ class FaceAFLWDataset(FaceBaseDataset):
             outputs.append(np.array(pred['keypoints'])[:, :-1])
             gts.append(np.array(item['joints_3d'])[:, :-1])
             masks.append((np.array(item['joints_3d_visible'])[:, 0]) > 0)
-            box_sizes.append(item['box_size'])
+            # box_sizes.append(item['box_size'])
 
         outputs = np.array(outputs)
         gts = np.array(gts)
         masks = np.array(masks)
-        box_sizes = np.array(box_sizes).reshape([-1, 1])
+        # box_sizes = np.array(box_sizes).reshape([-1, 1])
 
         if 'NME' in metrics:
-            normalize_factor = self._get_normalize_factor(box_sizes)
+            normalize_factor = self._get_normalize_factor(gts)
             info_str.append(
                 ('NME', keypoint_nme(outputs, gts, masks, normalize_factor)))
 
@@ -199,9 +204,9 @@ class FaceAFLWDataset(FaceBaseDataset):
         kpts = []
         for output in outputs:
             preds = output['preds']
-            boxes = output['boxes']
+            # boxes = output['boxes']
             image_paths = output['image_paths']
-            bbox_ids = output['bbox_ids']
+            # bbox_ids = output['bbox_ids']
 
             batch_size = len(image_paths)
             for i in range(batch_size):
@@ -209,14 +214,14 @@ class FaceAFLWDataset(FaceBaseDataset):
 
                 kpts.append({
                     'keypoints': preds[i].tolist(),
-                    'center': boxes[i][0:2].tolist(),
-                    'scale': boxes[i][2:4].tolist(),
-                    'area': float(boxes[i][4]),
-                    'score': float(boxes[i][5]),
+                    # 'center': boxes[i][0:2].tolist(),
+                    # 'scale': boxes[i][2:4].tolist(),
+                    # 'area': float(boxes[i][4]),
+                    # 'score': float(boxes[i][5]),
                     'image_id': image_id,
-                    'bbox_id': bbox_ids[i]
+                    # 'bbox_id': bbox_ids[i]
                 })
-        kpts = self._sort_and_unique_bboxes(kpts)
+        # kpts = self._sort_and_unique_bboxes(kpts)
 
         self._write_keypoint_results(kpts, res_file)
         info_str = self._report_metric(res_file, metrics)
